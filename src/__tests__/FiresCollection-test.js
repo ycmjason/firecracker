@@ -7,27 +7,77 @@ import executeQuery from '../transformers/executeQuery';
 jest.mock('../transformers/transformQuerySnapshot');
 import transformQuerySnapshot from '../transformers/transformQuerySnapshot';
 
+jest.mock('../fieldValues/serverTimestamp');
+import serverTimestamp from '../fieldValues/serverTimestamp';
+
 import { when } from 'jest-when';
 
 describe('FiresCollection', () => {
-  it('firesCollection.create(doc)', async () => {
-    const $mockCollection = { add: jest.fn() };
+  describe('firesCollection.create(doc)', () => {
+    it('should create document', async () => {
+      const $mockCollection = { add: jest.fn() };
 
-    when($mockCollection.add)
-      .calledWith({ a: 3 })
-      .mockReturnValue('the ref');
+      when($mockCollection.add)
+        .calledWith({ a: 3 })
+        .mockReturnValue('the ref');
 
-    when(FiresDocument.from)
-      .calledWith('the ref')
-      .mockResolvedValue('yoyo');
+      when(FiresDocument.from)
+        .calledWith('the ref')
+        .mockResolvedValue('yoyo');
 
-    const collection = new FiresCollection($mockCollection);
+      const collection = new FiresCollection($mockCollection);
 
-    expect(await collection.create({ a: 3 })).toBe('yoyo');
+      expect(await collection.create({ a: 3 })).toBe('yoyo');
+    });
+
+    it('should create document with autoTimestamps', async () => {
+      const $mockCollection = { add: jest.fn() };
+
+      serverTimestamp.mockReturnValue('time');
+
+      when($mockCollection.add)
+        .calledWith({ a: 3, $created: 'time' })
+        .mockReturnValue('the ref');
+
+      when(FiresDocument.from)
+        .calledWith('the ref')
+        .mockResolvedValue('yoyo');
+
+      const collection = new FiresCollection(
+        $mockCollection,
+        { autoTimestamps: true }
+      );
+
+      expect(await collection.create({ a: 3 })).toBe('yoyo');
+    });
   });
 
   describe('firesCollection.createWithId(doc)', () => {
     it('should create document at id', async () => {
+      serverTimestamp.mockReturnValue('time');
+
+      const $mockCollection = { doc: jest.fn() };
+
+      const $mockDocRef = { set: jest.fn(), get: () => ({ exists: false }) };
+
+      when($mockCollection.doc)
+        .calledWith('the id')
+        .mockReturnValue($mockDocRef);
+
+      when(FiresDocument.from)
+        .calledWith($mockDocRef)
+        .mockResolvedValue('yoyo');
+
+      const collection = new FiresCollection(
+        $mockCollection,
+        { autoTimestamps: true }
+      );
+
+      expect(await collection.createWithId('the id', { a: 3 })).toBe('yoyo');
+      expect($mockDocRef.set).toHaveBeenCalledWith({ a: 3, $created: 'time' });
+    });
+
+    it('should create at id with auto timestamp', async () => {
       const $mockCollection = { doc: jest.fn() };
 
       const $mockDocRef = { set: jest.fn(), get: () => ({ exists: false }) };

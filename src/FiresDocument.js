@@ -6,13 +6,15 @@ import {
 import { mapValues } from './utils';
 
 export default class FiresDocument {
-  constructor ({ $ref, $metadata, data }) {
+  constructor ({ $ref, $metadata, data }, opts = {}) {
     _setReadOnly(this, {
       ...data,
       $ref,
       $id: $ref.id,
       $metadata,
     });
+
+    this.opts = opts;
   }
 
   static async from ($obj) {

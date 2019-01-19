@@ -1,19 +1,34 @@
 import FiresDocument from './FiresDocument';
 import { executeQuery, transformQuerySnapshot } from './transformers';
+import serverTimestamp from './fieldValues/serverTimestamp';
+
+const prepareDocument = (doc, { autoTimestamps = false }) => {
+  const d = { ...doc };
+
+  if (autoTimestamps) {
+    d.$created = serverTimestamp();
+  }
+
+  return d;
+};
 
 export default class FiresCollection {
-  constructor ($collection) {
+  constructor ($collection, opts = {}) {
     this.$collection = $collection;
+    this.opts = opts;
   }
 
   // CREATE
   async create (doc) {
-    const $docRef = await this.$collection.add(doc);
+    const { opts } = this;
+    const $docRef = await this.$collection.add(
+      prepareDocument(doc, opts)
+    );
     return await FiresDocument.from($docRef);
   }
 
   async createWithId (id, doc) {
-    const { $collection } = this;
+    const { $collection, opts } = this;
     const $docRef = this.$collection.doc(id);
 
     // check if exists
@@ -22,7 +37,7 @@ export default class FiresCollection {
       throw Error(`${$collection.id}.${id} already exists`);
     }
 
-    await $docRef.set(doc);
+    await $docRef.set(prepareDocument(doc, opts));
     return await FiresDocument.from($docRef);
   }
 

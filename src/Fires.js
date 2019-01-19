@@ -9,20 +9,25 @@ const _checkFirestoreConfig = $firestore => {
 };
 
 export default class Fires {
-  constructor ($firestore) {
+  constructor ($firestore, opts = {}) {
     _checkFirestoreConfig($firestore);
+
     this.$firestore = $firestore;
     this.collectionMap = new Map();
+    this.opts = opts;
   }
 
   collection (name) {
-    const { collectionMap, $firestore } = this;
+    const { collectionMap, $firestore, opts } = this;
 
     if (collectionMap.has(name)) {
       return collectionMap.get(name);
     }
 
-    const collection = new FiresCollection($firestore.collection(name));
+    const collection = new FiresCollection(
+      $firestore.collection(name),
+      opts,
+    );
     collectionMap.set(name, collection);
     return collection;
   }

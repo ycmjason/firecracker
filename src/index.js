@@ -7,9 +7,9 @@ export { Fires };
 
 let firesSingleton;
 
-export default () => {
+export default (opts) => {
   if (firesSingleton) return firesSingleton;
 
-  firesSingleton = new Fires(firestore());
+  firesSingleton = new Fires(firestore(), opts);
   return firesSingleton;
 };
